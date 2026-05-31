@@ -19,7 +19,8 @@ class ChildTaskScreen extends StatefulWidget {
   State<ChildTaskScreen> createState() => _ChildTaskScreenState();
 }
 
-class _ChildTaskScreenState extends State<ChildTaskScreen> {
+class _ChildTaskScreenState extends State<ChildTaskScreen>
+    with TickerProviderStateMixin {
   _TaskScreenState _state = _TaskScreenState.idle;
 
   final AudioPlaybackService _audioService = AudioPlaybackService();
@@ -30,15 +31,39 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
   Timer? _elapsedTimer;
   int _elapsedSeconds = 0;
 
+  // Audio-wave animation while playing
+  late AnimationController _waveCtrl;
+
+  // Bounce animation for the complete button
+  late AnimationController _btnBounceCtrl;
+  late Animation<double> _btnBounceScale;
+
   @override
   void initState() {
     super.initState();
     _loadActiveTask();
+
+    _waveCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+
+    _btnBounceCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+
+    _btnBounceScale = Tween<double>(
+      begin: 1.0,
+      end: 1.04,
+    ).animate(CurvedAnimation(parent: _btnBounceCtrl, curve: Curves.easeInOut));
   }
 
   @override
   void dispose() {
     _elapsedTimer?.cancel();
+    _waveCtrl.dispose();
+    _btnBounceCtrl.dispose();
     _audioService.stop();
     _audioService.dispose();
     super.dispose();
@@ -58,11 +83,7 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
       }
     } catch (e) {
       debugPrint('Error loading active task: $e');
-      if (mounted) {
-        setState(() {
-          _activeTask = null;
-        });
-      }
+      if (mounted) setState(() => _activeTask = null);
     }
   }
 
@@ -75,7 +96,7 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
   void _startTimer() {
     _elapsedSeconds = 0;
     _elapsedTimer?.cancel();
-    _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (mounted) setState(() => _elapsedSeconds++);
     });
   }
@@ -99,11 +120,8 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
 
     int index = 0;
     while (mounted && _state == _TaskScreenState.playing) {
-      final asset = intermediateAnnouncements[index];
-      await _audioService.play(asset);
-
+      await _audioService.play(intermediateAnnouncements[index]);
       index = (index + 1) % intermediateAnnouncements.length;
-
       if (!mounted || _state != _TaskScreenState.playing) return;
       await Future.delayed(pauseDuration);
     }
@@ -112,7 +130,6 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
   Future<void> _completeTask() async {
     if (_activeTask == null || _state == _TaskScreenState.completed) return;
 
-    // Set state immediately to prevent re-entrancy and stop intermediate loops
     setState(() => _state = _TaskScreenState.completed);
 
     _elapsedTimer?.cancel();
@@ -140,25 +157,53 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      backgroundColor: AppColors.childBackground,
+      // No AppBar — clean full-screen experience for children
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const SizedBox(height: 16),
+              // Back arrow (subtle)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardWhite,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.textSecondary.withValues(alpha: 0.25),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.shadowOuter,
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
               Expanded(child: _buildContent()),
               if (_state == _TaskScreenState.playing) ...[
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 _buildCompleteButton(),
+                const SizedBox(height: 24),
               ],
+              if (_state != _TaskScreenState.playing)
+                const SizedBox(height: 24),
             ],
           ),
         ),
@@ -169,133 +214,477 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
   Widget _buildContent() {
     if (_activeTask == null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.info_outline, size: 64, color: AppColors.textSecondary),
-            const SizedBox(height: 16),
-            Text(
-              'No hay tareas asignadas',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Pídele a un adulto que te asigne una',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-          ],
+        child: _ClayCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.inbox_rounded,
+                size: 64,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No hay tareas asignadas',
+                style: Theme.of(context).textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Pídele a un adulto\nque te asigne una',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       );
     }
 
     switch (_state) {
       case _TaskScreenState.idle:
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.assignment, size: 80, color: AppColors.primary),
-            const SizedBox(height: 24),
-            Text(
-              'Tu tarea',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _activeTask!.name,
-              style: Theme.of(context).textTheme.displayMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: 200,
-              height: 200,
-              child: ElevatedButton(
-                onPressed: _startTask,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  elevation: 8,
-                  shadowColor: AppColors.primary.withValues(alpha: 0.5),
-                ),
-                child: const Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.play_arrow, size: 64),
-                    SizedBox(height: 4),
-                    Text(
-                      '¡Comenzar!',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
+        return _buildIdleState();
       case _TaskScreenState.playing:
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.assignment, size: 48, color: AppColors.primary),
-            const SizedBox(height: 12),
-            Text(
-              _activeTask!.name,
-              style: Theme.of(context).textTheme.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            Icon(Icons.timer_outlined, size: 48, color: AppColors.secondary),
-            const SizedBox(height: 8),
-            Text(
-              _formatTime(_elapsedSeconds),
-              style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                color: AppColors.primary,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'tiempo transcurrido',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-            ),
-          ],
-        );
+        return _buildPlayingState();
       case _TaskScreenState.completed:
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CompletionAnimation(),
-            const SizedBox(height: 24),
-            Text('¡Muy bien!', style: Theme.of(context).textTheme.displayLarge),
-          ],
-        );
+        return _buildCompletedState();
     }
   }
 
+  // ── Idle ──────────────────────────────────────────────────────────────────
+  Widget _buildIdleState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Task card
+        _ClayCard(
+          color: AppColors.cardWhite,
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  Icons.assignment_rounded,
+                  size: 52,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Tu tarea de hoy',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _activeTask!.name,
+                style: Theme.of(context).textTheme.displayMedium,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 32),
+
+        // Start button (clay style)
+        _ClayActionButton(
+          label: '¡Empezar tarea!',
+          color: AppColors.primary,
+          borderColor: AppColors.primaryDark,
+          icon: Icons.play_arrow_rounded,
+          onTap: _startTask,
+        ),
+      ],
+    );
+  }
+
+  // ── Playing ───────────────────────────────────────────────────────────────
+  Widget _buildPlayingState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Task name chip
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.cardWhite,
+            borderRadius: BorderRadius.circular(50),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.4),
+              width: 2,
+            ),
+          ),
+          child: Text(
+            _activeTask!.name,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: AppColors.primary),
+          ),
+        ),
+
+        const SizedBox(height: 32),
+
+        // Audio wave indicator (clay orb)
+        _AudioWaveOrb(controller: _waveCtrl),
+
+        const SizedBox(height: 32),
+
+        // Timer card
+        _ClayCard(
+          color: AppColors.cardWhite,
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 28),
+          child: Column(
+            children: [
+              Text(
+                _formatTime(_elapsedSeconds),
+                style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                  color: AppColors.primary,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  fontSize: 52,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'tiempo transcurrido',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Motivational pill
+        _MotivationalPill(),
+      ],
+    );
+  }
+
+  // ── Completed ─────────────────────────────────────────────────────────────
+  Widget _buildCompletedState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const CompletionAnimation(),
+        const SizedBox(height: 24),
+        Text(
+          '¡Lo lograste!',
+          style: Theme.of(
+            context,
+          ).textTheme.displayLarge?.copyWith(color: AppColors.primary),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '¡Eres una campeona! 🏆',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  // ── Complete button ────────────────────────────────────────────────────────
   Widget _buildCompleteButton() {
-    return SizedBox(
+    return ScaleTransition(
+      scale: _btnBounceScale,
+      child: _ClayActionButton(
+        label: '¡Tarea completada!',
+        color: AppColors.success,
+        borderColor: AppColors.successDark,
+        icon: Icons.check_circle_rounded,
+        onTap: _completeTask,
+        fontSize: 22,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared clay sub-widgets
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ClayCard extends StatelessWidget {
+  final Widget child;
+  final Color? color;
+  final EdgeInsetsGeometry? padding;
+
+  const _ClayCard({required this.child, this.color, this.padding});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
       width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _completeTask,
-        icon: const Icon(Icons.check_circle, size: 32),
-        label: const Text('¡Tarea completada!'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.success,
-          foregroundColor: AppColors.white,
-          minimumSize: const Size(double.infinity, 80),
+      padding: padding ?? const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: color ?? AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: AppColors.textSecondary.withValues(alpha: 0.15),
+          width: 3,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowOuter,
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _ClayActionButton extends StatefulWidget {
+  final String label;
+  final Color color;
+  final Color borderColor;
+  final IconData icon;
+  final VoidCallback onTap;
+  final double fontSize;
+
+  const _ClayActionButton({
+    required this.label,
+    required this.color,
+    required this.borderColor,
+    required this.icon,
+    required this.onTap,
+    this.fontSize = 20,
+  });
+
+  @override
+  State<_ClayActionButton> createState() => _ClayActionButtonState();
+}
+
+class _ClayActionButtonState extends State<_ClayActionButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        transform: _pressed
+            ? (Matrix4.identity()..translateByDouble(0.0, 4.0, 0.0, 1.0))
+            : Matrix4.identity(),
+        decoration: BoxDecoration(
+          color: widget.color,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: widget.borderColor, width: 3),
+          boxShadow: _pressed
+              ? []
+              : [
+                  BoxShadow(
+                    color: widget.borderColor.withValues(alpha: 0.8),
+                    blurRadius: 0,
+                    offset: const Offset(0, 5),
+                  ),
+                  BoxShadow(
+                    color: widget.borderColor.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(widget.icon, size: 32, color: AppColors.white),
+            const SizedBox(width: 12),
+            Text(
+              widget.label,
+              style: TextStyle(
+                fontSize: widget.fontSize,
+                fontWeight: FontWeight.w900,
+                color: AppColors.white,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Animated orb that shows sound-wave rings while audio plays.
+class _AudioWaveOrb extends StatelessWidget {
+  final AnimationController controller;
+
+  const _AudioWaveOrb({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) {
+        return SizedBox(
+          width: 160,
+          height: 160,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Ring 1
+              _buildRing(controller.value, AppColors.primary, 140),
+              // Ring 2 (offset phase)
+              _buildRing(
+                (controller.value + 0.33) % 1.0,
+                AppColors.secondary,
+                140,
+              ),
+              // Ring 3
+              _buildRing(
+                (controller.value + 0.66) % 1.0,
+                AppColors.accent,
+                140,
+              ),
+              // Core orb
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primary,
+                  border: Border.all(color: AppColors.primaryDark, width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryDark.withValues(alpha: 0.5),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.volume_up_rounded,
+                  size: 38,
+                  color: AppColors.white,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRing(double progress, Color color, double maxSize) {
+    final scale = progress;
+    final opacity = (1.0 - progress).clamp(0.0, 1.0);
+    return Opacity(
+      opacity: opacity * 0.5,
+      child: Transform.scale(
+        scale: 0.5 + scale * 0.5,
+        child: Container(
+          width: maxSize,
+          height: maxSize,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: color, width: 3),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Rotating motivational messages shown during the task.
+class _MotivationalPill extends StatefulWidget {
+  @override
+  State<_MotivationalPill> createState() => _MotivationalPillState();
+}
+
+class _MotivationalPillState extends State<_MotivationalPill>
+    with SingleTickerProviderStateMixin {
+  final List<String> _messages = [
+    '¡Tú puedes!',
+    '¡Vas genial!',
+    '¡Sigue adelante!',
+    '¡Eres increíble!',
+    '¡Ya casi terminas!',
+  ];
+  int _msgIndex = 0;
+  Timer? _msgTimer;
+
+  late AnimationController _fadeCtrl;
+  late Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeInOut);
+    _fadeCtrl.forward();
+
+    _msgTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      await _fadeCtrl.reverse();
+      if (mounted) {
+        setState(() => _msgIndex = (_msgIndex + 1) % _messages.length);
+        _fadeCtrl.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _msgTimer?.cancel();
+    _fadeCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnim,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.accent.withValues(alpha: 0.25),
+          borderRadius: BorderRadius.circular(50),
+          border: Border.all(
+            color: AppColors.accent.withValues(alpha: 0.6),
+            width: 2,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.auto_awesome_rounded,
+              size: 18,
+              color: AppColors.warning,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _messages[_msgIndex],
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
         ),
       ),
     );

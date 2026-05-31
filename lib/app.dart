@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:sarah_app/core/constants/app_colors.dart';
+import 'package:sarah_app/core/theme/app_theme.dart';
 import 'package:sarah_app/presentation/bloc/mode_bloc.dart';
 import 'package:sarah_app/routes.dart';
 
@@ -35,15 +35,7 @@ class _SarahAppState extends State<SarahApp> {
             navigatorKey: _navigatorKey,
             title: 'Sarah App',
             debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              useMaterial3: true,
-              scaffoldBackgroundColor: isChild
-                  ? AppColors.childBackground
-                  : AppColors.parentBackground,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: isChild ? AppColors.primary : AppColors.secondary,
-              ),
-            ),
+            theme: isChild ? AppTheme.childTheme : AppTheme.parentTheme,
             initialRoute: isChild ? AppRoutes.childHome : AppRoutes.parentHome,
             onGenerateRoute: AppRoutes.generateRoute,
           );
