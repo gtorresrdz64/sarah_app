@@ -7,7 +7,7 @@ App móvil que guía a niños por voz a completar tareas del hogar, fomentando l
 ### Modo Niño
 1. **Pantalla de inicio** — Botón grande y pulsante para comenzar.
 2. **Selección de tarea** — Muestra la tarea activa asignada por los padres.
-3. **Guía motivacional** — Al presionar "Comenzar", reproduce `task_started` una vez. Durante la tarea, los audios `good_job`, `keep_going` y `almost_done` se reproducen en bucle continuo con pausas de 10s. Al presionar "¡Tarea completada!", se reproduce `all_done` y finaliza la tarea.
+3. **Guía motivacional** — Al presionar "Comenzar", reproduce `task_started` una vez. Durante la tarea, los audios `good_job`, `howisyourtask`, `keep_going`, `cheers` y `almost_done` se reproducen en bucle continuo con pausas de 10s. Al presionar "¡Tarea completada!", se reproduce `all_done` y finaliza la tarea.
 4. **Cronómetro** — Muestra el tiempo transcurrido durante la tarea.
 5. **Finalización** — Botón "¡Tarea completada!" para marcar la tarea como hecha, con animación de celebración.
 

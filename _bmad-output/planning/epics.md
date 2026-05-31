@@ -147,7 +147,7 @@ Para **sentirme guiada y motivada hasta terminar**.
 **Dado** que el comando de voz fue reconocido,
 **Cuando** comienza la guía,
 **Entonces** debe reproducir `task_started` una sola vez
-**Y** al terminar, debe reproducir en bucle continuo la secuencia [good_job, keep_going, almost_done] con pausas de 10s ±0.5s entre cada anuncio
+**Y** al terminar, debe reproducir en bucle continuo la secuencia [good_job, howisyourtask, keep_going, cheers, almost_done] con pausas de 10s ±0.5s entre cada anuncio
 **Y** cada anuncio debe comenzar en menos de 1s desde su activación
 **Dado** que el bucle está activo,
 **Cuando** el usuario presiona "¡Tarea completada!",

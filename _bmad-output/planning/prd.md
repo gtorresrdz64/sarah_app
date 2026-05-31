@@ -158,7 +158,7 @@ El niño solo necesita escuchar. No requiere leer, tocar la pantalla ni interact
 
 ### Guía por Audio
 - FR7: El sistema puede reproducir "Sarah nos han asignado la tarea de [tarea], iniciemos ya" al presionar Comenzar
-- FR8: El sistema puede reproducir en bucle continuo "Empecemos, vas a ver que rápido salimos de esta tarea", "Excelente Sarah, vas muy bien" y "Ya casi terminamos" con pausas de 10s
+- FR8: El sistema puede reproducir en bucle continuo "Excelente Sarah, vas muy bien", "¿Cómo vas con tu tarea?", "Sigue así, ya casi lo tienes", "¡Ánimo, tú puedes!" y "Ya casi terminamos" con pausas de 10s
 - FR9: El sistema puede detener el bucle de audio al presionar "Tarea completada"
 - FR10: El sistema puede reproducir "Bien hecho Sarah, lo hiciste muy bien" solo al presionar "Tarea completada"
 - FR11: El sistema puede reproducir los anuncios en menos de 1s desde su activación

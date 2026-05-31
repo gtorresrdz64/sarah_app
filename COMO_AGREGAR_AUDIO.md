@@ -4,7 +4,7 @@ Esta guía te ayudará a agregar y configurar correctamente los archivos de audi
 
 ## 1. Requisitos de los Archivos de Audio
 
-Para que la aplicación funcione correctamente y reproduzca la guía por voz en secuencia, se requieren exactamente **5 archivos de audio** con nombres y extensiones específicos.
+Para que la aplicación funcione correctamente y reproduzca la guía por voz en secuencia, se requieren exactamente **7 archivos de audio** con nombres y extensiones específicos.
 
 ### Nombres y Textos Sugeridos:
 
@@ -12,13 +12,15 @@ Para que la aplicación funcione correctamente y reproduzca la guía por voz en 
 |---|---|---|
 | `AudioAssets.taskStarted` | **`task_started.mp3`** | "¡Hola Sarah! Nos han asignado una tarea muy importante, ¡iniciemos ya!" |
 | `AudioAssets.goodJob` | **`good_job.mp3`** | "¡Excelente Sarah, vas muy bien!" |
+| `AudioAssets.howIsYourTask` | **`howisyourtask.mp3`** | "¿Cómo vas con tu tarea?" |
 | `AudioAssets.keepGoing` | **`keep_going.mp3`** | "Sigue así, ya casi lo tienes." |
+| `AudioAssets.cheers` | **`cheers.mp3`** | "¡Ánimo, tú puedes!" |
 | `AudioAssets.almostDone` | **`almost_done.mp3`** | "¡Ya casi terminamos!" |
 | `AudioAssets.allDone` | **`all_done.mp3`** | "¡Bien hecho Sarah, lo hiciste muy bien!" |
 
 > **Nota:** La aplicación está configurada para reproducir estos audios con el siguiente orden y comportamiento:
 > 1. `task_started.mp3` se reproduce una única vez al presionar el botón **"¡Comenzar!"**.
-> 2. Los audios intermedios (`good_job.mp3`, `keep_going.mp3` y `almost_done.mp3`) se reproducen de forma secuencial y en bucle continuo (loop) durante el transcurso de la tarea, con un intervalo de **10 segundos** entre el inicio de cada reproducción.
+> 2. Los audios intermedios (`good_job.mp3`, `howisyourtask.mp3`, `keep_going.mp3`, `cheers.mp3` y `almost_done.mp3`) se reproducen de forma secuencial y en bucle continuo (loop) durante el transcurso de la tarea, con un intervalo de **10 segundos** entre el inicio de cada reproducción.
 > 3. `all_done.mp3` se reproduce únicamente al presionar el botón **"¡Tarea completada!"**, deteniendo inmediatamente cualquier audio intermedio que se encuentre reproduciéndose.
 
 ---
@@ -33,13 +35,15 @@ mkdir -p assets/audio
 ```
 
 ### Paso 2.2: Guardar los archivos de audio
-Copia tus 5 archivos `.mp3` grabados o generados dentro del directorio recién creado:
+Copia tus 7 archivos `.mp3` grabados o generados dentro del directorio recién creado:
 `assets/audio/`
 
 Por ejemplo:
 - `assets/audio/task_started.mp3`
 - `assets/audio/good_job.mp3`
+- `assets/audio/howisyourtask.mp3`
 - `assets/audio/keep_going.mp3`
+- `assets/audio/cheers.mp3`
 - `assets/audio/almost_done.mp3`
 - `assets/audio/all_done.mp3`
 
@@ -50,7 +54,7 @@ Puedes verificar que los archivos estén en la ubicación correcta ejecutando:
 ls -la assets/audio/
 ```
 
-Deberías ver listados los 5 archivos `.mp3` mencionados anteriormente.
+Deberías ver listados los 7 archivos `.mp3` mencionados anteriormente.
 
 ---
 

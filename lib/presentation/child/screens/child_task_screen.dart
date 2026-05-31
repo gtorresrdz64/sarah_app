@@ -91,7 +91,9 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
 
     const intermediateAnnouncements = [
       AudioAssets.goodJob,
+      AudioAssets.howIsYourTask,
       AudioAssets.keepGoing,
+      AudioAssets.cheers,
       AudioAssets.almostDone,
     ];
 

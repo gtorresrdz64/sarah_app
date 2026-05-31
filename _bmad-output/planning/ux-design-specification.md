@@ -146,7 +146,7 @@ El niño piensa: "Presiono el botón, veo qué tengo que hacer, presiono comenza
 
 1. **Inicio:** Botón grande y llamativo. El niño presiona.
 2. **Tarea asignada:** La app muestra el nombre de la tarea activa + botón "¡Comenzar!".
-3. **Guía + Cronómetro:** Al presionar "Comenzar", se reproduce `task_started` una vez. Durante la ejecución de la tarea, los 3 audios intermedios (`good_job`, `keep_going`, `almost_done`) se reproducen en bucle continuo con pausas de 10s entre cada uno. Un cronómetro cuenta el tiempo transcurrido.
+3. **Guía + Cronómetro:** Al presionar "Comenzar", se reproduce `task_started` una vez. Durante la ejecución de la tarea, los 5 audios intermedios (`good_job`, `howisyourtask`, `keep_going`, `cheers`, `almost_done`) se reproducen en bucle continuo con pausas de 10s entre cada uno. Un cronómetro cuenta el tiempo transcurrido.
 4. **Completado:** El niño presiona "¡Tarea completada!" cuando termina. La app detiene el bucle de audios intermedios, reproduce `all_done`, marca la tarea, muestra animación de celebración y regresa al inicio.
 
 ### Novel UX Patterns
@@ -208,15 +208,19 @@ graph TD
     C --> D[Pausa 10s + Timer]
     D --> E[Anuncio 2: Vas bien + Timer]
     E --> F[Pausa 10s + Timer]
-    F --> G[Anuncio 3: Sigue así + Timer]
+    F --> G[Anuncio 3: ¿Cómo vas? + Timer]
     G --> H[Pausa 10s + Timer]
-    H --> I[Anuncio 4: Casi terminamos + Timer]
+    H --> I[Anuncio 4: Sigue así + Timer]
     I --> J[Pausa 10s + Timer]
-    J -->|Loop infinito| E
-    B -.->|En cualquier momento| K[Presiona ¡Tarea completada!]
-    K --> L[Anuncio 5: Bien hecho + Celebración]
-    L --> M[Animación celebración]
-    M --> A
+    J --> K[Anuncio 5: ¡Ánimo! + Timer]
+    K --> L[Pausa 10s + Timer]
+    L --> M[Anuncio 6: Casi terminamos + Timer]
+    M --> N[Pausa 10s + Timer]
+    N -->|Loop infinito| E
+    B -.->|En cualquier momento| O[Presiona ¡Tarea completada!]
+    O --> P[Anuncio 7: Bien hecho + Celebración]
+    P --> Q[Animación celebración]
+    Q --> A
 ```
 
 ### Flujo 2: Padre asigna tarea
