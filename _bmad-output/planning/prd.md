@@ -143,7 +143,7 @@ El niño solo necesita escuchar. No requiere leer, tocar la pantalla ni interact
 
 - Reconocimiento de voz on-device (sin APIs cloud)
 - Almacenamiento local de tareas (sin backend)
-- Reproducción de audio con pausas programadas de 10s
+- Reproducción de audio con pausas programadas de 10s y bucle continuo
 - UI mínima: pantalla de inicio con botón, sin distracciones
 
 ## Requerimientos Funcionales
@@ -157,11 +157,11 @@ El niño solo necesita escuchar. No requiere leer, tocar la pantalla ni interact
 - FR6: El sistema puede regresar al inicio si no detecta un comando en 10s
 
 ### Guía por Audio
-- FR7: El sistema puede reproducir "Sarah nos han asignado la tarea de [tarea], iniciemos ya"
-- FR8: El sistema puede reproducir "Empecemos, vas a ver que rápido salimos de esta tarea"
-- FR9: El sistema puede reproducir "Excelente Sarah, vas muy bien"
-- FR10: El sistema puede reproducir "Ya casi terminamos"
-- FR11: El sistema puede reproducir "Bien hecho Sarah, lo hiciste muy bien"
+- FR7: El sistema puede reproducir "Sarah nos han asignado la tarea de [tarea], iniciemos ya" al presionar Comenzar
+- FR8: El sistema puede reproducir en bucle continuo "Empecemos, vas a ver que rápido salimos de esta tarea", "Excelente Sarah, vas muy bien" y "Ya casi terminamos" con pausas de 10s
+- FR9: El sistema puede detener el bucle de audio al presionar "Tarea completada"
+- FR10: El sistema puede reproducir "Bien hecho Sarah, lo hiciste muy bien" solo al presionar "Tarea completada"
+- FR11: El sistema puede reproducir los anuncios en menos de 1s desde su activación
 - FR12: El sistema puede hacer una pausa de 10s entre cada anuncio
 - FR13: El sistema puede regresar al inicio al finalizar el último anuncio
 

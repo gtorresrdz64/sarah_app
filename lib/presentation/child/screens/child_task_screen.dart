@@ -45,15 +45,24 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
   }
 
   Future<void> _loadActiveTask() async {
-    final tasks = await _repository.getTasks();
-    if (mounted) {
-      setState(() {
-        try {
-          _activeTask = tasks.firstWhere((t) => t.isActive);
-        } catch (_) {
+    try {
+      final tasks = await _repository.getTasks();
+      if (mounted) {
+        setState(() {
+          try {
+            _activeTask = tasks.firstWhere((t) => t.isActive);
+          } catch (_) {
+            _activeTask = null;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading active task: $e');
+      if (mounted) {
+        setState(() {
           _activeTask = null;
-        }
-      });
+        });
+      }
     }
   }
 
@@ -65,37 +74,57 @@ class _ChildTaskScreenState extends State<ChildTaskScreen> {
 
   void _startTimer() {
     _elapsedSeconds = 0;
+    _elapsedTimer?.cancel();
     _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) setState(() => _elapsedSeconds++);
     });
   }
 
   Future<void> _playSequence() async {
-    const announcements = [
-      AudioAssets.taskStarted,
+    const pauseDuration = Duration(seconds: 10);
+
+    if (!mounted || _state != _TaskScreenState.playing) return;
+    await _audioService.play(AudioAssets.taskStarted);
+
+    if (!mounted || _state != _TaskScreenState.playing) return;
+    await Future.delayed(pauseDuration);
+
+    const intermediateAnnouncements = [
       AudioAssets.goodJob,
       AudioAssets.keepGoing,
       AudioAssets.almostDone,
-      AudioAssets.allDone,
     ];
 
-    for (final asset in announcements) {
-      if (!mounted || _state != _TaskScreenState.playing) return;
+    int index = 0;
+    while (mounted && _state == _TaskScreenState.playing) {
+      final asset = intermediateAnnouncements[index];
       await _audioService.play(asset);
-      if (asset != announcements.last) {
-        await Future.delayed(const Duration(seconds: 10));
-      }
+
+      index = (index + 1) % intermediateAnnouncements.length;
+
+      if (!mounted || _state != _TaskScreenState.playing) return;
+      await Future.delayed(pauseDuration);
     }
   }
 
   Future<void> _completeTask() async {
-    if (_activeTask == null) return;
+    if (_activeTask == null || _state == _TaskScreenState.completed) return;
+
+    // Set state immediately to prevent re-entrancy and stop intermediate loops
+    setState(() => _state = _TaskScreenState.completed);
+
     _elapsedTimer?.cancel();
     _audioService.stop();
-    await _completeTaskUseCase(_activeTask!);
+    await _audioService.play(AudioAssets.allDone);
+
+    try {
+      await _completeTaskUseCase(_activeTask!);
+    } catch (e) {
+      debugPrint('Error completing task: $e');
+    }
+
     if (mounted) {
-      setState(() => _state = _TaskScreenState.completed);
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 3));
       if (mounted) Navigator.pop(context);
     }
   }
