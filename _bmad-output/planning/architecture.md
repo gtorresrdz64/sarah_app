@@ -13,7 +13,7 @@ inputDocuments:
 workflowType: 'architecture'
 project_name: 'sarah_app'
 user_name: 'Gustavo'
-date: '2026-05-27'
+date: '2026-05-30'
 ---
 
 # Architecture Decision Document
@@ -24,28 +24,29 @@ _Collaboratively built through step-by-step discovery. Sections are appended as 
 
 ### Requirements Overview
 
-**Functional Requirements:** 22 FRs cubriendo inicio, comandos de voz, guía por audio, gestión de padres, persistencia.
+**Functional Requirements:** 26 FRs cubriendo inicio con saludo, visualización de tarea activa, guía por audio en bucle, estados visuales (idle/playing/completed), gestión de padres, persistencia.
 
-**Non-Functional Requirements:** 10 NFRs cubriendo rendimiento (< 2s voz, < 1s audio, ±0.5s pausas), accesibilidad (contraste alto, botones grandes), confiabilidad (sin crashes, persistencia).
+**Non-Functional Requirements:** 12 NFRs cubriendo rendimiento (< 1s audio, ±0.5s pausas, < 3s inicio), accesibilidad (contraste alto #2E1065/#FAF5FF, botones 72-190dp), estilo visual (Claymorphism, paleta morada), confiabilidad (sin crashes, persistencia).
 
 **Scale & Complexity:**
 - Primary domain: Mobile App (Flutter Android)
 - Complexity level: Baja
-- Estimated architectural components: 4 (UI niño, UI padre, voz/audio, almacenamiento local)
+- Estimated architectural components: 4 (UI niño, UI padre, audio, almacenamiento local)
 
 ### Technical Constraints & Dependencies
 
 - Offline 100% (sin conexión a internet)
-- Reconocimiento de voz on-device con frases exactas predefinidas
+- Interacción táctil con botones clay (sin reconocimiento de voz)
 - Sin backend, sin API, sin sincronización cloud
 - Sin autenticación de usuarios
 
 ### Cross-Cutting Concerns Identified
 
-- Estados de UI (inicio/escuchando/reproduciendo/completado)
-- Manejo de permisos de micrófono
-- Gestión de reproducción de audio con pausas programadas
+- Estados de UI (idle/playing/completed)
+- Gestión de reproducción de audio con pausas programadas y bucle
+- Animaciones Claymorphism (pulse ring, press effect, confetti particle system)
 - Persistencia local de datos de tareas
+- Temas separados childTheme / parentTheme
 
 ## Starter Decision: Hybrid Architecture
 
@@ -59,7 +60,7 @@ Se adoptó un enfoque **híbrido** combinando tres patrones según la responsabi
 
 ### Decisiones Clave
 
-1. **Clean Architecture para lógica**: Separamos `domain/` (entidades, repositorios abstractos, casos de uso), `data/` (implementaciones concretas, almacenamiento local con shared_preferences/sqflite), y `presentation/` (widgets y BLoCs). Esto permite testear la lógica de voz y persistencia sin depender de Flutter.
+1. **Clean Architecture para lógica**: Separamos `domain/` (entidades, repositorios abstractos, casos de uso), `data/` (implementaciones concretas, almacenamiento local con shared_preferences/sqflite), y `presentation/` (widgets y BLoCs). Esto permite testear la lógica de dominio y persistencia sin depender de Flutter.
 2. **Simple Flutter para vistas**: Las pantallas son widgets planos sin capas adicionales. No introducimos MVC/MVVM en UI porque cada pantalla tiene una sola acción.
 3. **BLoC solo para modo**: Un `ModeBloc` global con dos estados (`ChildMode`, `ParentMode`). Los widgets escuchan cambios y reconstruyen la navegación raíz.
 
@@ -72,22 +73,22 @@ lib/
 │
 ├── core/
 │   ├── constants/
-│   │   ├── voice_commands.dart    # Las 3 frases exactas predefinidas (sin usar actualmente)
-│   │   ├── audio_assets.dart      # Rutas a los 5 anuncios pregrabados
-│   │   └── app_colors.dart        # Paleta de colores Material Design
+│   │   ├── voice_commands.dart    # (Legacy — frases de voz predefinidas, sin usar)
+│   │   ├── audio_assets.dart      # Rutas a los 7 audios pregrabados
+│   │   └── app_colors.dart        # Paleta Claymorphism unisex morada
 │   ├── theme/
-│   │   └── app_theme.dart         # Tema personalizado (botones 80dp, tipografía)
+│   │   └── app_theme.dart         # childTheme y parentTheme con estilo clay
 │   └── utils/
-│       └── permissions_helper.dart  # Manejo de permisos de micrófono (sin usar actualmente)
+│       └── permissions_helper.dart  # (Legacy — permisos de micrófono, sin usar)
 │
 ├── domain/
 │   ├── entities/
 │   │   └── task.dart              # Entidad Task: id, name, isCompleted, assignedAt
 │   ├── repositories/
 │   │   └── task_repository.dart   # Abstracto: getTasks, addTask, updateTask, deleteTask
-│   └── usecases/
-│       ├── listen_command.dart    # (Sin usar actualmente)
-│       ├── play_guidance.dart     # DTO para configuración de guía
+│       └── usecases/
+│       ├── listen_command.dart    # (Legacy — sin usar, del flujo de voz anterior)
+│       ├── play_guidance.dart     # DTO para configuración de guía (legacy)
 │       ├── get_tasks.dart         # Obtener todas las tareas
 │       └── complete_task.dart     # Marcar tarea como completada
 │
@@ -105,8 +106,8 @@ lib/
 │   │   │   ├── child_home_screen.dart       # Pantalla inicio niño (botón grande)
 │   │   │   └── child_task_screen.dart       # Pantalla tarea: comenzar → audio + timer → completar
 │   │   └── widgets/
-│   │       ├── listening_indicator.dart      # (Sin usar actualmente)
-│   │       └── completion_animation.dart     # Animación tarea completada
+│   │       ├── listening_indicator.dart      # Indicador sonar (legacy, sin usar en flujo actual)
+│   │       └── completion_animation.dart     # Trofeo elastic + confeti particle system
 │   └── parent/
 │       ├── screens/
 │       │   ├── parent_home_screen.dart       # Lista de tareas del hijo
@@ -116,8 +117,8 @@ lib/
 │           └── task_form.dart                # Formulario para nueva tarea
 │
 ├── services/
-│   ├── voice_recognition_service.dart    # (Sin usar actualmente)
-│   └── audio_playback_service.dart       # Wrapper de audioplayers
+│   ├── voice_recognition_service.dart    # (Legacy — sin usar, del flujo de voz anterior)
+│   └── audio_playback_service.dart       # Wrapper de audioplayers para reproducción y bucle
 │
 └── routes.dart                         # Definición de rutas por modo
 ```
@@ -162,10 +163,10 @@ lib/
 │                                                             │
 ├─────────────────────────────────────────────────────────────┤
 │                    SERVICES                                 │
-│  ┌─────────────────────┐  ┌─────────────────────────────┐  │
-│  │ VoiceRecognition    │  │ AudioPlayback               │  │
-│  │ (speech_to_text)    │  │ (audioplayers)              │  │
-│  └─────────────────────┘  └─────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ AudioPlayback (audioplayers)                         │  │
+│  │ Reproducción y bucle de 7 audios motivacionales      │  │
+│  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -174,11 +175,13 @@ lib/
 ### Modo Niño: Completar tarea
 
 ```
-ChildHomeScreen → Navigator.push a ChildTaskScreen
-  → TaskRepository.getTasks → muestra tarea activa
-  → Niño presiona "Comenzar" → AudioPlaybackService.play(secuencia)
-  → Niño presiona "Tarea completada" → CompleteTask usecase → TaskRepositoryImpl.updateTask
-  → Animación celebración → Navigator.pop
+ChildHomeScreen (saludo + botón clay 190dp) → Navigator.push a ChildTaskScreen
+  → TaskRepository.getTasks → muestra tarea activa en clay card
+  → Niño presiona "¡Empezar tarea!" → AudioPlaybackService.play(task_started una vez)
+  → Bucle infinito [good_job, howisyourtask, keep_going, cheers, almost_done] con pausas 10s
+  → Niño presiona "¡Tarea completada!" (botón verde bouncing) → CompleteTask usecase → TaskRepositoryImpl.updateTask
+  → Detiene bucle → AudioPlaybackService.play(all_done)
+  → Animación trofeo + confeti → 3s → Navigator.pop
 ```
 
 ### Modo Padre: Asignar tarea
@@ -226,7 +229,7 @@ Las rutas se definen con `onGenerateRoute` en `routes.dart`. El cambio de modo s
 | `flutter_bloc` | BLoC state management para modo |
 | `equatable` | Comparación de estados BLoC |
 
-> Nota: `speech_to_text` está en pubspec.yaml pero actualmente no se usa en el flujo activo (se reemplazó por interacción táctil con botones).
+> Nota: `speech_to_text` está en pubspec.yaml como dependencia legacy (del flujo de voz original) pero no se usa en el flujo activo.
 
 ## Security & Permissions
 
@@ -238,11 +241,11 @@ Las rutas se definen con `onGenerateRoute` en `routes.dart`. El cambio de modo s
 
 ### ADR-001: Clean Architecture para lógica, no para UI
 
-**Contexto:** Necesitamos testear lógica de voz y persistencia sin depender de Flutter.
+**Contexto:** Necesitamos testear lógica de dominio y persistencia sin depender de Flutter.
 
 **Decisión:** Aplicamos Clean Architecture solo en `domain/` y `data/`. La capa `presentation/` usa widgets de Flutter simples + BLoC para el modo global.
 
-**Consecuencia:** Los casos de uso son puro Dart y testeables con `dart test`. Las pantallas son rápidas de prototipar.
+**Consecuencia:** Los casos de uso son puro Dart y testeables con `dart test`. Las pantallas son rápidas de prototipar con estilo Claymorphism.
 
 ### ADR-002: BLoC limitado al cambio de modo con BlocListener para navegación
 

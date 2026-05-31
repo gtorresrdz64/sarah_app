@@ -1,6 +1,6 @@
 # Guía para Agregar Archivos de Audio - Sarah App
 
-Esta guía te ayudará a agregar y configurar correctamente los archivos de audio motivacionales para el modo infantil de la aplicación **Sarah App**.
+Esta guía te ayudará a agregar y configurar correctamente los 7 archivos de audio motivacionales para el modo infantil de la aplicación **Sarah App**.
 
 ## 1. Requisitos de los Archivos de Audio
 
@@ -19,7 +19,7 @@ Para que la aplicación funcione correctamente y reproduzca la guía por voz en 
 | `AudioAssets.allDone` | **`all_done.mp3`** | "¡Bien hecho Sarah, lo hiciste muy bien!" |
 
 > **Nota:** La aplicación está configurada para reproducir estos audios con el siguiente orden y comportamiento:
-> 1. `task_started.mp3` se reproduce una única vez al presionar el botón **"¡Comenzar!"**.
+> 1. `task_started.mp3` se reproduce una única vez al presionar el botón **"¡Empezar tarea!"** (en la pantalla de tarea activa).
 > 2. Los audios intermedios (`good_job.mp3`, `howisyourtask.mp3`, `keep_going.mp3`, `cheers.mp3` y `almost_done.mp3`) se reproducen de forma secuencial y en bucle continuo (loop) durante el transcurso de la tarea, con un intervalo de **10 segundos** entre el inicio de cada reproducción.
 > 3. `all_done.mp3` se reproduce únicamente al presionar el botón **"¡Tarea completada!"**, deteniendo inmediatamente cualquier audio intermedio que se encuentre reproduciéndose.
 
