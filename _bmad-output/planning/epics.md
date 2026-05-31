@@ -146,10 +146,13 @@ Para **sentirme guiada y motivada hasta terminar**.
 
 **Dado** que el comando de voz fue reconocido,
 **Cuando** comienza la guía,
-**Entonces** debe reproducir en orden: Anuncio 1, pausa 10s, Anuncio 2, pausa 10s, Anuncio 3, pausa 10s, Anuncio 4, pausa 10s, Anuncio 5
-**Y** cada pausa debe durar exactamente 10s ±0.5s
+**Entonces** debe reproducir `task_started` una sola vez
+**Y** al terminar, debe reproducir en bucle continuo la secuencia [good_job, howisyourtask, keep_going, cheers, almost_done] con pausas de 10s ±0.5s entre cada anuncio
 **Y** cada anuncio debe comenzar en menos de 1s desde su activación
-**Y** al terminar el Anuncio 5, debe regresar a la pantalla de inicio
+**Dado** que el bucle está activo,
+**Cuando** el usuario presiona "¡Tarea completada!",
+**Entonces** debe detener el bucle inmediatamente
+**Y** debe reproducir `all_done` y mostrar la pantalla de celebración
 
 ### Story 1.4: Estados visuales del ciclo de tarea
 
